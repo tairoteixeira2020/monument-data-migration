@@ -1,0 +1,11 @@
+facilityName,unitNumber,unitSize,unitType
+Dallas North,1000,11x12x12,Self-Storage
+Dallas North,1001,10x10x12,Self-Storage
+Dallas South,1000,8x10x12,Self-Storage
+Dallas South,1001,8x8x12,Self-Storage
+Dallas South,1002,8x8x12,Climate-Controlled
+Austin Central,2000,12x15x12,Self-Storage
+Austin Central,2001,12x12x12,Climate-Controlled
+Houston East,3000,10x10x12,Self-Storage
+Houston East,3001,10x15x12,Self-Storage
+Houston East,3002,9x9x12,Climate-Controlled

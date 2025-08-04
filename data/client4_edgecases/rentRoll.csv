@@ -1,0 +1,4 @@
+facilityName,unitNumber,firstName,lastName,phone,email,rentStartDate,rentEndDate,monthlyRent,currentRentOwed,currentRentOwedDueDate,someExtra
+East Side,300,Frank,Moore,555-4444,frank@example.com,2025-06-01,2026-05-31,250.00,0.00,,
+East Side,301,Grace,Parker,555-5555,grace@example.com,2025-05-01,2025-11-30,abc,50.00,2025-11-01,unexpected
+East Side,300,Hank,Reed,,,2025-07-01,2025-12-31,300.00,100.00,2025-12-01,

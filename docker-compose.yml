@@ -1,0 +1,26 @@
+services:
+  db:
+    image: postgres:15
+    container_name: monument_db
+    restart: always
+    # se você estiver usando o novo Docker Compose V2, pode remover a chave `version`
+    ports:
+      - "5437:5432"
+    environment:
+      POSTGRES_USER: monument
+      POSTGRES_PASSWORD: monument123
+      POSTGRES_DB: monument
+    volumes:
+      - monument_data:/var/lib/postgresql/data
+    # antes de chamar o entrypoint oficial, apaga TODO o conteúdo de data
+    entrypoint:
+      - bash
+      - -c
+      - |
+        echo ">>> Limpando /var/lib/postgresql/data ..."
+        rm -rf /var/lib/postgresql/data/* 
+        echo ">>> Inicializando Postgres (entrypoint oficial) ..."
+        exec docker-entrypoint.sh postgres
+
+volumes:
+  monument_data:

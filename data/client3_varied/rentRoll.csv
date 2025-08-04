@@ -1,0 +1,8 @@
+facilityName,unitNumber,firstName,lastName,phone,email,rentStartDate,rentEndDate,monthlyRent,currentRentOwed,currentRentOwedDueDate
+Dallas North,1000.0,Alice,Smith,555-1234,alice@example.com,2025-01-01T00:00:00Z,2025-06-30T23:59:59Z,100.00,50.00,2025-06-15T00:00:00Z
+Dallas North,1000.0,Alice,Smith,555-1234,alice@example.com,2025-05-01T00:00:00Z,2025-12-31T23:59:59Z,100.00,0.00,2025-07-01T00:00:00Z
+Unknown Facility,9999,Bob,Jones,555-9876,bob@example.com,2025-03-01,2025-09-30,120.00,30.00,invalid-date
+Dallas South,1001,Carol,,555-2222,carol@example.com,2025-02-01,2025-08-31,150.00,75.00,2025-08-01
+Central,201,dave,Lee,555-3333,DAVE@example.com,2025-04-01,2025-10-31,200.00,200.00,2025-09-01
+Central,201,Dave,Lee,555-3333,dave@example.com,2025-04-01,2025-10-31,200.00,200.00,2025-09-01
+Central,200,Eve,Adams,,eve@example.com,not-a-date,2025-07-31,180.00,0.00,2025-07-01

@@ -1,0 +1,9 @@
+facilityName,unitNumber,unitSize,unitType
+Dallas North,1000,10x12x12,Self-Storage
+Dallas North,1001,10x10x12,Self-Storage
+Dallas South,1000,8x10x12,Self-Storage
+Dallas South,1001,8x8x12,Self-Storage
+Dallas South,1002,8x8x12,Climate-Controlled
+Broken Facility,,10x10x12,Self-Storage
+Weird Size,2001,10x12,Self-Storage
+Dallas North,1001,10x10x12,Self-Storage

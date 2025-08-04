@@ -2,7 +2,7 @@
 
 &#x20;
 
-A NestJS-powered CLI utility for migrating self-storage data from flat-file CSV exports into a PostgreSQL database. Designed for reliability and repeatability, it ingests `unit.csv` and `rentRoll.csv`, validates and transforms the data, and idempotently upserts records—ensuring that re-running the migration after CSV changes reflects updates without creating duplicates.
+A NestJS-powered CLI utility for migrating self-storage data from flat-file CSV exports into a PostgreSQL database. Designed for reliability and repeatability, it ingests `unit.csv` and `rentRoll.csv`, validates and transforms the data, and aim to idempotently upserts records—ensuring that re-running the migration after CSV changes reflects updates without creating duplicates.
 
 ---
 
@@ -20,21 +20,18 @@ A NestJS-powered CLI utility for migrating self-storage data from flat-file CSV 
 - [Configuration](#configuration)
 - [Data Files](#data-files)
 - [Logging & Audit](#logging--audit)
-- [Testing](#testing)
+- [Testing (TODO)](#testing-todo)
 - [Error Handling & Retries](#error-handling--retries)
-- [Contributing](#contributing)
-- [License](#license)
 
 ---
 
 ## Features
 
 - **Idempotent Upserts**: Uses natural keys and `ON CONFLICT` logic so you can re-run the migration after CSV edits without duplicating records.
-- **CSV Parsing & Normalization**: Handles `unitSize` (e.g., `10x12x8`), dates, phone numbers, and rent values with robust validation and fallback strategies.
+- **CSV Parsing & Normalization**: Handles `unitSize` (e.g., `10x12x8`), with robust validation and fallback strategies. TODO: Add the same logic for dates, phone numbers, and rent values.
 - **Transactional Integrity**: Wraps each row’s operations (facility → unit → tenant → contract → invoice) in a database transaction to ensure atomicity.
 - **Audit Logging**: Emits detailed logs of created, updated, and rejected rows for troubleshooting and reporting.
 - **Docker-Compose Support**: Spin up a local PostgreSQL instance with a single command.
-- **Configurable & Extensible**: Environment-driven configuration and modular upsert helpers to adapt to new schemas or data sources.
 
 ---
 
@@ -61,12 +58,15 @@ Copy the example `.env.example` to `.env` and adjust values as needed:
 
 ```
 # .env
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_NAME=monument_migration
-DATA_FOLDER_NAME=data
+DB_HOST=localhost                # Hostname of the PostgreSQL server
+DB_PORT=5437                     # Custom Postgres port (default is 5432)
+DB_USER=monument                 # Database username for migration
+DB_PASS=monument123              # Password for the 'monument' database user
+DB_NAME=monument                 # Target PostgreSQL database name
+
+PORT=3000                        # HTTP port for the NestJS application (if used)
+
+DATA_FOLDER_NAME=client1_health  # Subdirectory in /data where CSV files reside
 ```
 
 ### Database Setup (Docker)
@@ -77,7 +77,13 @@ Launch a local PostgreSQL container:
 docker-compose up -d
 ```
 
-This will create a PostgreSQL instance listening on the port configured in your `.env`.
+This will create a PostgreSQL instance listening on the port configured in your `docker-compose.yml`.
+
+When you run the command below and rerun the docker-compose up -d a fresh new PostgreSQL container is created.
+
+```bash
+docker compose down
+```
 
 ### Install Dependencies
 
@@ -94,7 +100,7 @@ npm install
 Run the migration pipeline with:
 
 ```bash
-npm run migrate
+npm run migrate:all
 ```
 
 On completion, you’ll see a summary of:
@@ -109,19 +115,28 @@ On completion, you’ll see a summary of:
 
 ```
 monument-data-migration/
-├─ src/
-│  ├─ entities/           # TypeORM entity definitions
-│  ├─ upsert-utils.ts     # Helper functions for idempotent upserts
-│  ├─ migration.service.ts # Core migration logic and orchestration
-│  └─ main.ts             # CLI bootstrap
-├─ data/                  # Place your CSV files here
-│  ├─ unit.csv
-│  └─ rentRoll.csv
-├─ logs/                  # Audit logs and rejection reports
-├─ docker-compose.yml     # PostgreSQL service
-├─ .env.example           # Sample environment variables
-├─ package.json
-└─ README.md
+├── data                      # CSV input folders
+├── logs                      # Migration error logs
+├── src                       # Application source code
+│   ├── entities              # TypeORM entity definitions
+│   │   ├── facility.entity.ts
+│   │   ├── rental-contract.entity.ts
+│   │   ├── rental-invoice.entity.ts
+│   │   ├── tenant.entity.ts
+│   │   └── unit.entity.ts
+│   ├── main.ts               # CLI bootstrap
+│   ├── migration             # Migration feature module
+│   │   ├── migration.command.ts
+│   │   ├── migration.module.ts
+│   │   └── migration.service.ts
+│   ├── scripts               # Standalone scripts
+│   │   └── run-migration.ts
+│   └── transformers          # Data transformation utilities
+│       └── iso-date.transformer.ts
+├── docker-compose.yml        # PostgreSQL service configuration
+├── package.json
+├── package-lock.json
+└── README.md
 ```
 
 ---
@@ -158,7 +173,7 @@ Columns are validated and transformed automatically; invalid rows are logged to 
 
 ---
 
-## Testing
+## Testing (TODO)
 
 Unit tests cover transformation helpers and upsert logic:
 
@@ -173,16 +188,3 @@ npm run test
 - **Atomicity**: Each row is wrapped in its own transaction. Failures roll back that row’s changes.
 - **Rejection Reports**: Malformed or invalid rows are skipped and appended to `logs/rejections.csv` with the error reason.
 - **Retry**: Fix the source CSV and re-run `npm run migrate`; only changed rows will be updated/inserted.
-
----
-
-## Contributing
-
-Contributions welcome! Please fork the repo and open a PR with your changes.\
-Ensure new features include relevant tests and update the README as needed.
-
----
-
-## License
-
-This project is licensed under the [MIT License](LICENSE).

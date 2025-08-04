@@ -1,98 +1,188 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Monument Data Migration
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+&#x20;
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+A NestJS-powered CLI utility for migrating self-storage data from flat-file CSV exports into a PostgreSQL database. Designed for reliability and repeatability, it ingests `unit.csv` and `rentRoll.csv`, validates and transforms the data, and idempotently upserts records—ensuring that re-running the migration after CSV changes reflects updates without creating duplicates.
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Table of Contents
 
-## Project setup
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+- [Getting Started](#getting-started)
+  - [Clone the Repository](#clone-the-repository)
+  - [Environment Configuration](#environment-configuration)
+  - [Database Setup (Docker)](#database-setup-docker)
+  - [Install Dependencies](#install-dependencies)
+- [Usage](#usage)
+- [Project Structure](#project-structure)
+- [Configuration](#configuration)
+- [Data Files](#data-files)
+- [Logging & Audit](#logging--audit)
+- [Testing](#testing)
+- [Error Handling & Retries](#error-handling--retries)
+- [Contributing](#contributing)
+- [License](#license)
 
-```bash
-$ npm install
-```
+---
 
-## Compile and run the project
+## Features
 
-```bash
-# development
-$ npm run start
+- **Idempotent Upserts**: Uses natural keys and `ON CONFLICT` logic so you can re-run the migration after CSV edits without duplicating records.
+- **CSV Parsing & Normalization**: Handles `unitSize` (e.g., `10x12x8`), dates, phone numbers, and rent values with robust validation and fallback strategies.
+- **Transactional Integrity**: Wraps each row’s operations (facility → unit → tenant → contract → invoice) in a database transaction to ensure atomicity.
+- **Audit Logging**: Emits detailed logs of created, updated, and rejected rows for troubleshooting and reporting.
+- **Docker-Compose Support**: Spin up a local PostgreSQL instance with a single command.
+- **Configurable & Extensible**: Environment-driven configuration and modular upsert helpers to adapt to new schemas or data sources.
 
-# watch mode
-$ npm run start:dev
+---
 
-# production mode
-$ npm run start:prod
-```
+## Prerequisites
 
-## Run tests
+- [Node.js](https://nodejs.org/) v16 or higher
+- [npm](https://www.npmjs.com/) or [Yarn](https://yarnpkg.com/)
+- [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/)
 
-```bash
-# unit tests
-$ npm run test
+---
 
-# e2e tests
-$ npm run test:e2e
+## Getting Started
 
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Clone the Repository
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+git clone https://github.com/tairoteixeira2020/monument-data-migration.git
+cd monument-data-migration
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Environment Configuration
 
-## Resources
+Copy the example `.env.example` to `.env` and adjust values as needed:
 
-Check out a few resources that may come in handy when working with NestJS:
+```
+# .env
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=monument_migration
+DATA_FOLDER_NAME=data
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### Database Setup (Docker)
 
-## Support
+Launch a local PostgreSQL container:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+docker-compose up -d
+```
 
-## Stay in touch
+This will create a PostgreSQL instance listening on the port configured in your `.env`.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### Install Dependencies
+
+```bash
+npm install
+# or
+# yarn install
+```
+
+---
+
+## Usage
+
+Run the migration pipeline with:
+
+```bash
+npm run migrate
+```
+
+On completion, you’ll see a summary of:
+
+- Records created
+- Records updated
+- Rows rejected (with reasons)
+
+---
+
+## Project Structure
+
+```
+monument-data-migration/
+├─ src/
+│  ├─ entities/           # TypeORM entity definitions
+│  ├─ upsert-utils.ts     # Helper functions for idempotent upserts
+│  ├─ migration.service.ts # Core migration logic and orchestration
+│  └─ main.ts             # CLI bootstrap
+├─ data/                  # Place your CSV files here
+│  ├─ unit.csv
+│  └─ rentRoll.csv
+├─ logs/                  # Audit logs and rejection reports
+├─ docker-compose.yml     # PostgreSQL service
+├─ .env.example           # Sample environment variables
+├─ package.json
+└─ README.md
+```
+
+---
+
+## Configuration
+
+| Variable           | Description                 | Default              |
+| ------------------ | --------------------------- | -------------------- |
+| `DB_HOST`          | PostgreSQL host             | `localhost`          |
+| `DB_PORT`          | PostgreSQL port             | `5432`               |
+| `DB_USER`          | Database user               | `postgres`           |
+| `DB_PASSWORD`      | Database password           | `postgres`           |
+| `DB_NAME`          | Database name               | `monument_migration` |
+| `DATA_FOLDER_NAME` | Relative path to CSV folder | `data`               |
+
+---
+
+## Data Files
+
+Place your source CSVs in the `data/` directory at the project root:
+
+- ``: Contains facility names, unit numbers, dimensions (WxLxH), types, and base rents.
+- ``: Contains tenant information, rental start/end dates, monthly rents, and current amounts owed.
+
+Columns are validated and transformed automatically; invalid rows are logged to `logs/rejections.csv`.
+
+---
+
+## Logging & Audit
+
+- **Console**: Summary of operations (counts of upserts, updates, rejections).
+- **File Logs**: Detailed CSV report of rejected rows (in `logs/rejections.csv`) with reasons.
+- **Debug Mode**: Use `DEBUG=true npm run migrate` for additional trace logs.
+
+---
+
+## Testing
+
+Unit tests cover transformation helpers and upsert logic:
+
+```bash
+npm run test
+```
+
+---
+
+## Error Handling & Retries
+
+- **Atomicity**: Each row is wrapped in its own transaction. Failures roll back that row’s changes.
+- **Rejection Reports**: Malformed or invalid rows are skipped and appended to `logs/rejections.csv` with the error reason.
+- **Retry**: Fix the source CSV and re-run `npm run migrate`; only changed rows will be updated/inserted.
+
+---
+
+## Contributing
+
+Contributions welcome! Please fork the repo and open a PR with your changes.\
+Ensure new features include relevant tests and update the README as needed.
+
+---
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+This project is licensed under the [MIT License](LICENSE).

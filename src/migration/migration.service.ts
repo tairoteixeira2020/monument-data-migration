@@ -395,7 +395,7 @@ export class MigrationService {
           where: {
             unit: { unitId: unit.unitId },
             tenant: { tenantId: tenant.tenantId },
-            startDate: startDateIso, // ISO string → transformer will TO() it back to Date
+            startDate: startDateIso,
           },
         });
 
@@ -477,7 +477,7 @@ export class MigrationService {
           }
         }
 
-        // Recalculate currentAmountOwed as sum of invoice balances
+        /*// Recalculate currentAmountOwed as sum of invoice balances
         const allInvoices = await queryRunner.manager.find(RentalInvoice, {
           where: {
             rentalContract: {
@@ -494,7 +494,7 @@ export class MigrationService {
           contract.currentAmountOwed = totalOwed;
           updatedContracts += 1;
           await queryRunner.manager.save(RentalContract, contract);
-        }
+        }*/
       }
 
       await queryRunner.commitTransaction();

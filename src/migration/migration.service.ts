@@ -35,10 +35,17 @@ interface RentRollRow {
 
 let insertedUnits = 0;
 let insertedFacily = 0;
+let updatedUnits = 0;
+let rejectedUnitRows = 0;
+
 let processed = 0;
 let createdTenants = 0;
+let updatedTenants = 0;
 let createdContracts = 0;
+let updatedContracts = 0;
 let createdInvoices = 0;
+let updatedInvoices = 0;
+let rejectedRentRows = 0;
 
 @Injectable()
 export class MigrationService {
@@ -99,6 +106,7 @@ export class MigrationService {
             'logs/migration-errors.log',
             `[${new Date().toISOString()}] unit.csv skipped (missing required field): ${JSON.stringify(row)}\n`,
           );
+          rejectedUnitRows++;
           continue;
         }
 
@@ -109,6 +117,7 @@ export class MigrationService {
             'logs/migration-errors.log',
             `[${new Date().toISOString()}] unit.csv skipped (invalid size format): ${JSON.stringify(row)}\n`,
           );
+          rejectedUnitRows++;
           continue;
         }
 
@@ -165,6 +174,7 @@ export class MigrationService {
             updated = true;
           }
           if (updated) {
+            updatedUnits++;
             await queryRunner.manager.save(Unit, existingUnit);
           }
         } else {
@@ -183,7 +193,11 @@ export class MigrationService {
 
       await queryRunner.commitTransaction();
       this.logger.log(
-        `Units migration finished. New facilities inserted: ${insertedFacily}, new units inserted: ${insertedUnits}.`,
+        `Units migration finished. ` +
+          `New facilities inserted: ${insertedFacily}, ` +
+          `new units inserted: ${insertedUnits}, ` +
+          `units updated: ${updatedUnits}, ` +
+          `rows rejected: ${rejectedUnitRows}.`,
       );
     } catch (err: unknown) {
       await queryRunner.rollbackTransaction();
@@ -241,6 +255,7 @@ export class MigrationService {
             'logs/migration-errors.log',
             `[${new Date().toISOString()}] rentRoll.csv skipped (missing required): ${JSON.stringify(row)}\n`,
           );
+          rejectedRentRows++;
           continue;
         }
 
@@ -265,6 +280,7 @@ export class MigrationService {
             'logs/migration-errors.log',
             `[${new Date().toISOString()}] rentRoll.csv orphaned unit: ${JSON.stringify(row)}\n`,
           );
+          rejectedRentRows++;
           continue;
         }
 
@@ -293,6 +309,7 @@ export class MigrationService {
           rentRollMonthly > 0 &&
           Number(unit.monthlyRent) !== rentRollMonthly
         ) {
+          updatedUnits++;
           this.logger.log(
             `Updating unit ${unit.number} base monthlyRent from ${unit.monthlyRent} to ${rentRollMonthly}`,
           );
@@ -343,6 +360,7 @@ export class MigrationService {
           }
 
           if (changed) {
+            updatedTenants++;
             await queryRunner.manager.save(tenant);
           }
         } else {
@@ -364,6 +382,7 @@ export class MigrationService {
           this.logger.warn(
             `Invalid rentStartDate, skipping row: ${JSON.stringify(row)}`,
           );
+          rejectedRentRows++;
           continue;
         }
         const endDateIso = parseDateSafe(row.rentEndDate) ?? undefined;
@@ -420,6 +439,7 @@ export class MigrationService {
 
           if (changed) {
             await queryRunner.manager.save(RentalContract, contract);
+            updatedContracts++;
           }
         }
 
@@ -442,16 +462,17 @@ export class MigrationService {
             createdInvoices += 1;
           } else {
             let updated = false;
-            if (invoice.invoiceAmount !== monthlyRent) {
+            if (Number(invoice.invoiceAmount) !== monthlyRent) {
               invoice.invoiceAmount = monthlyRent;
               updated = true;
             }
-            if (invoice.invoiceBalance !== currentRentOwed) {
+            if (Number(invoice.invoiceBalance) !== currentRentOwed) {
               invoice.invoiceBalance = currentRentOwed;
               updated = true;
             }
             if (updated) {
               await queryRunner.manager.save(RentalInvoice, invoice);
+              updatedInvoices++;
             }
           }
         }
@@ -465,16 +486,30 @@ export class MigrationService {
           },
           relations: ['rentalContract'],
         });
-        contract.currentAmountOwed = allInvoices.reduce(
+        const totalOwed = allInvoices.reduce(
           (sum, inv) => sum + this.safeParseNumber(inv.invoiceBalance as any),
           0,
         );
-        await queryRunner.manager.save(RentalContract, contract);
+        if (Number(contract.currentAmountOwed) !== totalOwed) {
+          contract.currentAmountOwed = totalOwed;
+          updatedContracts += 1;
+          await queryRunner.manager.save(RentalContract, contract);
+        }
       }
 
       await queryRunner.commitTransaction();
       this.logger.log(
-        `rentRoll migration finished. Rows processed: ${processed}, tenants created: ${createdTenants}, contracts created: ${createdContracts}, invoices created: ${createdInvoices}.`,
+        `rentRoll migration finished. ` +
+          `Rows processed: ${processed}, ` +
+          `rows rejected: ${rejectedRentRows}, ` +
+          `tenants created: ${createdTenants}, ` +
+          `tenants updated: ${updatedTenants}, ` +
+          `contracts created: ${createdContracts}, ` +
+          `contracts updated: ${updatedContracts}, ` +
+          `invoices created: ${createdInvoices}, ` +
+          `invoices updated: ${updatedInvoices}, ` +
+          `units updated: ${updatedUnits}` +
+          `.`,
       );
     } catch (err: unknown) {
       await queryRunner.rollbackTransaction();

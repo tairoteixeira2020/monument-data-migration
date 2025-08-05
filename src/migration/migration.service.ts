@@ -179,7 +179,7 @@ export class MigrationService {
           }
         } else {
           const newUnit = queryRunner.manager.create(Unit, {
-            number: row.unitNumber,
+            number: normalizeUnitNumber(row.unitNumber),
             unitWidth,
             unitLength,
             unitHeight,
@@ -365,15 +365,17 @@ export class MigrationService {
           }
         } else {
           // 4) Create new if still not found
-          const newTenantData: DeepPartial<Tenant> = {
-            firstName: row.firstName,
-            lastName: row.lastName,
-            email: row.email,
-            phone: row.phone,
-          };
-          const newTenant = queryRunner.manager.create(Tenant, newTenantData);
-          tenant = await queryRunner.manager.save(newTenant);
-          createdTenants += 1;
+          if (row.email && row.phone) {
+            const newTenantData: DeepPartial<Tenant> = {
+              firstName: row.firstName,
+              lastName: row.lastName,
+              email: normalizeString(row.email),
+              phone: row.phone,
+            };
+            const newTenant = queryRunner.manager.create(Tenant, newTenantData);
+            tenant = await queryRunner.manager.save(newTenant);
+            createdTenants += 1;
+          } else continue;
         }
 
         // Parse values

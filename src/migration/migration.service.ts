@@ -33,6 +33,13 @@ interface RentRollRow {
   currentRentOwedDueDate: string;
 }
 
+let insertedUnits = 0;
+let insertedFacily = 0;
+let processed = 0;
+let createdTenants = 0;
+let createdContracts = 0;
+let createdInvoices = 0;
+
 @Injectable()
 export class MigrationService {
   private readonly logger = new Logger(MigrationService.name);
@@ -80,7 +87,6 @@ export class MigrationService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    let insertedUnits = 0;
     try {
       const facilityCache = new Map<string, Facility>();
 
@@ -107,30 +113,26 @@ export class MigrationService {
         }
 
         const [unitWidth, unitLength, unitHeight] = sizeTuple;
+        const facilityName = row.facilityName.trim();
 
         // Upsert facility using DB-level unique constraint on name
-        const facilityName = row.facilityName;
-        await queryRunner.manager
-          .createQueryBuilder()
-          .insert()
-          .into(Facility)
-          .values({ name: facilityName })
-          .orIgnore() // ← replaces onConflict(… DO NOTHING)
-          .execute();
-
-        // Fetch the facility (either from cache or, if first time, from DB)
         let facility = facilityCache.get(facilityName);
         if (!facility) {
-          // This will throw if somehow we didn’t just insert it
-          const fetched = await queryRunner.manager.findOne(Facility, {
+          const existingFacility = await queryRunner.manager.findOne(Facility, {
             where: { name: facilityName },
           });
-
-          if (!fetched) {
-            throw new Error(`Facility not found after insert: ${facilityName}`);
+          if (existingFacility) {
+            facility = existingFacility;
+          } else {
+            const newFacility = queryRunner.manager.create(Facility, {
+              name: facilityName,
+            });
+            facility = await queryRunner.manager.save(newFacility);
+            insertedFacily += 1;
+            this.logger.log(
+              `Created facility: "${facilityName}" (ID: ${facility.facilityId})`,
+            );
           }
-
-          facility = fetched;
           facilityCache.set(facilityName, facility);
         }
 
@@ -181,7 +183,7 @@ export class MigrationService {
 
       await queryRunner.commitTransaction();
       this.logger.log(
-        `Units migration finished. New units inserted: ${insertedUnits}.`,
+        `Units migration finished. New facilities inserted: ${insertedFacily}, new units inserted: ${insertedUnits}.`,
       );
     } catch (err: unknown) {
       await queryRunner.rollbackTransaction();
@@ -216,11 +218,6 @@ export class MigrationService {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-
-    let processed = 0;
-    let createdTenants = 0;
-    let createdContracts = 0;
-    let createdInvoices = 0;
 
     /**
      * Parses a CSV date/text and returns an ISO‐8601 string,

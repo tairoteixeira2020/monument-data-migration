@@ -1,5 +1,5 @@
 facilityName,unitNumber,firstName,lastName,phone,email,rentStartDate,rentEndDate,monthlyRent,currentRentOwed,currentRentOwedDueDate
-Dallas North,1000,Alice,Johnson,555-123-4567,alice.johnson@example.com,2025-01-01T00:00:00Z,2025-12-31T23:59:59Z,150.00,0.00
+Dallas North,1000,Alice,Johnson,555-123-4567,alice.johnson@example.com,2025-01-01T00:00:00Z,2025-12-31T23:59:59Z,155.00,0.00
 Dallas North,1001,Bob,Smith,555-234-5678,bob.smith@example.com,2025-02-15T00:00:00Z,2025-11-30T23:59:59Z,140.00,70.00,2025-08-15T00:00:00Z
 Dallas South,1000,Carla,Gonzalez,555-345-6789,carla.gonzalez@example.com,2025-03-01T00:00:00Z,2025-09-30T23:59:59Z,120.00,0.00
 Dallas South,1001,Daniel,Lee,555-456-7890,daniel.lee@example.com,2025-04-01T00:00:00Z,2025-10-31T23:59:59Z,110.00,110.00,2025-08-10T00:00:00Z

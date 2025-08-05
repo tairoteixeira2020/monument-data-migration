@@ -22,6 +22,7 @@ A NestJS-powered CLI utility for migrating self-storage data from flat-file CSV 
 - [Logging & Audit](#logging--audit)
 - [Testing (TODO)](#testing-todo)
 - [Error Handling & Retries](#error-handling--retries)
+- [Next](#next)
 
 ---
 
@@ -175,7 +176,7 @@ Columns are validated and transformed automatically; invalid rows are logged to 
 
 ## Testing (TODO)
 
-Unit tests cover transformation helpers and upsert logic:
+Unit tests should cover transformation helpers and upsert logic:
 
 ```bash
 npm run test
@@ -188,3 +189,9 @@ npm run test
 - **Atomicity**: Each row is wrapped in its own transaction. Failures roll back that row’s changes.
 - **Rejection Reports**: Malformed or invalid rows are skipped and appended to `logs/rejections.csv` with the error reason.
 - **Retry**: Fix the source CSV and re-run `npm run migrate`; only changed rows will be updated/inserted.
+
+## Next
+- **Phone/string normalization**: format phone numbers (e.g. removing non-digits or enforcing a pattern).
+- **Scalability**: 
+  - ***Batching & batched commits***: group operations into batches of N rows. Send each batch of inserts/updates together and then commit rather than executing and committing one row at a time.
+  - ***Stream processing***: read big csv files using fs stream `fs.createReadStream(filePath)`.

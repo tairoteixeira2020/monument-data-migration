@@ -190,6 +190,8 @@ npm run test
 - **Rejection Reports**: Malformed or invalid rows are skipped and appended to `logs/rejections.csv` with the error reason.
 - **Retry**: Fix the source CSV and re-run `npm run migrate`; only changed rows will be updated/inserted.
 
+---
+
 ## Next
 - **Phone/string normalization**: format phone numbers (e.g. removing non-digits or enforcing a pattern).
 - **Scalability**: 
